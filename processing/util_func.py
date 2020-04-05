@@ -33,7 +33,7 @@ def update_duration(user):
     return user
 
 
-def diameterExceedCnstr(traj,i,j,spat_constr):
+def diameterExceedCnstr(traj,i,j, spat_constr):
     """
     The Diameter function computes the greatest distance between any two locations with in the set traj[i:j]
     and compare the distance with constraint
