@@ -17,7 +17,7 @@ from util_func import update_duration, diameterExceedCnstr
 
 
 def clusterPhone(arg):
-    user, dur_constr, spat_constr,= arg
+    user, dur_constr, spat_constr = arg
     # spat_constr_cell = 1.0
     L = []
     # prepare
