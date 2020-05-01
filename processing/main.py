@@ -15,9 +15,9 @@ Add comments to share with Yuanjie
 from __future__ import print_function
 
 
-workdir = 'E:\\cuebiq_psrc_201911\\'
-file2process = 'part201911_01.csv'
-output2file = 'trip_identified_part201911_01.csv'
+workdir = 'E:\\ProgramData\\python\cuebiq_share_git\\app-data\\testdata\\'
+file2process = 'part201911_00_test0429.csv'
+output2file = 'trip_identified_part201911_01-test0429.csv'
 
 
 
@@ -43,10 +43,7 @@ from gps_traces_clustering import clusterGPS
 from cellular_traces_clustering import clusterPhone
 from combine_stays_phone_gps import combineGPSandPhoneStops
 
-
-
 cpu_useno = cpu_count()#1
-print('cpu number: ', cpu_useno)
 
 
 def init(l):
@@ -62,6 +59,8 @@ def process_a_user(arg):
     :return: user
     """
     name, user, dur_constr, spat_constr_gps, spat_constr_cell, spat_cell_split, workdir = arg  # unpack arguments
+
+    ## split into gps traces and cellular traces
     user_gps = {}
     user_cell = {}
     for d in user.keys():
@@ -73,8 +72,8 @@ def process_a_user(arg):
             else:
                 user_cell[d].append(trace)
 
-    user_gps = clusterGPS((user_gps, dur_constr, spat_constr_gps))
-    user_cell = clusterPhone((user_cell, dur_constr, spat_constr_cell))
+    user_gps = clusterGPS((user_gps, dur_constr, spat_constr_gps)) # process gps traces
+    user_cell = clusterPhone((user_cell, dur_constr, spat_constr_cell)) # process cellular traces
     user = combineGPSandPhoneStops((user_gps, user_cell, dur_constr, spat_constr_gps, spat_cell_split))
     return user
 
@@ -90,6 +89,7 @@ def mainfunc_identify_trip_ends(arg):
     name, user, dur_constr, spat_constr_gps, spat_constr_cell, spat_cell_split, workdir = arg # unpack arguments
 
     user_org = copy.deepcopy(user)
+
     try:
         user = process_a_user(arg) ## if it takes longer than 30*60 seconds to process a name, return an error
         ## write outputs to file; file name is the name of current processor
@@ -115,7 +115,8 @@ def mainfunc_identify_trip_ends(arg):
                 if len(user_org[day]):
                     for trace in user_org[day]:
                         trace[1] = name
-                        writeCSV.writerow(trace)
+                        writeCSV.writerow(trace[:6] + [trace[-1]])
+                        # recover original data structure by taking out inserted 5 columns
             f.close()
 
 
@@ -171,7 +172,6 @@ if __name__ == '__main__':
 
         with open(workdir + file2process) as readfile:  # traces_to_be_processed
             readCSV = csv.reader(readfile, delimiter='\t')
-            # next(readCSV)
             for row in readCSV:
                 name = row[1]
                 if name in UserList:
@@ -193,7 +193,7 @@ if __name__ == '__main__':
                         UserList[name][row[-1][:6]].append(row)
 
         '''
-        sort users and a user having more records takes a cpu core earlier
+            sort users and a user having more records takes a cpu core earlier
         '''
         sortednames = {}
         for name in UserList:

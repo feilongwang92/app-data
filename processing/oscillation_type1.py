@@ -12,15 +12,15 @@ sys.path.append("E:\\ProgramData\\python\\cuebiq_share_git")
 
 
 def oscillation_h1_oscill(user, dur_constr):
-    user = user#arg[0]
+    # user = user#arg[0]
     TimeWindow = dur_constr#arg[1]#5 * 60
-    oscillgpspairlist = []
 
-    tracelist = []
+    tracelist = [] # we will be working on tracelist not user
     for d in sorted(user.keys()):
         for trace in user[d]:
-            dur_i = 1 if int(trace[9]) == -1 else int(trace[9])
-            tracelist.append([trace[1], trace[0], dur_i, trace[6], trace[7], trace[8], 1, 1])
+            dur_i = 1 if int(trace[9]) == -1 else int(trace[9]) # duration is 1 for passing-by records
+            tracelist.append([trace[1], trace[0], dur_i, trace[6], trace[7], trace[8]])
+            # format of each record: [ID, time, duration, lat, long, uncertainty_radius]
 
     # integrate: only one record representing one stay (i-i records)
     i = 0
@@ -72,34 +72,41 @@ def oscillation_h1_oscill(user, dur_constr):
             sequence_list = [(item, gpsno_dur_count[item]) for item in set(suspSequence_gpsno)]  # ('gpsno','dur')
             sequence_list = sorted(sequence_list, key=lambda x: x[1], reverse=True)
             # get unique pairs
-            oscillation_pairs = list(
-                set([(sequence_list[0][0], sequence_list[i][0]) for i in range(1, len(sequence_list))]))
+            oscillation_pairs = list(set([(sequence_list[0][0], sequence_list[i][0]) for i in range(1, len(sequence_list))]))
             t_start = suspSequence[-1]  # + 1
         else:
             t_start += 1
 
     # record locations of oscill pairs
-    pinggps = [0, 0]
-    ponggps = [0, 0]
+    oscillgpspairlist = {}
     for pair in oscillation_pairs:
         flag_ping = 0
         flag_pong = 0
         for ii in range(len(tracelist)):  # find ping of this pair
             if tracelistno_original[ii] == pair[0]:
-                pinggps = [tracelist[ii][3], tracelist[ii][4]]
+                pinggps = (tracelist[ii][3], tracelist[ii][4])
                 flag_ping = 1
             if tracelistno_original[ii] == pair[1]:
-                ponggps = [tracelist[ii][3], tracelist[ii][4]]
+                ponggps = (tracelist[ii][3], tracelist[ii][4])
                 flag_pong = 1
             if flag_ping * flag_pong == 1:
                 break
-        pairgps = [pinggps[0], pinggps[1], ponggps[0], ponggps[1]]
-        if pairgps not in oscillgpspairlist: oscillgpspairlist.append(pairgps)
-    i=0 # remove -1 in oscillpair
-    while i < len(oscillgpspairlist):
-        if -1 in oscillgpspairlist[i]:
-            del oscillgpspairlist[i]
-        else:
-            i += 1
+        if flag_ping*flag_pong:
+            oscillgpspairlist[ponggps] = pinggps
+        # pairgps = [pinggps[0], pinggps[1], ponggps[0], ponggps[1]]
+        # if pairgps not in oscillgpspairlist: oscillgpspairlist.append(pairgps)
 
-    return oscillgpspairlist
+    # remove -1 in oscillpair
+    for pair in oscillgpspairlist.keys():
+        if (-1 in pair) or (-1 in oscillgpspairlist[pair]):
+            del oscillgpspairlist[pair]
+
+    # find pong in trajactory, and replace it with ping
+    # this part is original outside this function
+    # OscillationPairList is in format: {, (ping[0], ping[1]): (pong[0], pong[1])}
+    for d in user.keys():
+        for trace in user[d]:
+            if (trace[6], trace[7]) in oscillgpspairlist:
+                trace[6], trace[7] = oscillgpspairlist[(trace[6], trace[7])]
+
+    return user #oscillgpspairlist

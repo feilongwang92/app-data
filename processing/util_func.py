@@ -1,13 +1,7 @@
 
 
-import sys
-from itertools import combinations
 
-sys.path.append("E:\\ProgramData\\python\\cuebiq_share_git")
-from distance import distance
-
-
-def update_duration(user):
+def update_duration(user, dur_constr):
     """
 
         :param user:
@@ -30,52 +24,15 @@ def update_duration(user):
                 for k in range(i, j, 1):
                     user[d][k][9] = dur
                 i = j
+
+    for d in user.keys():
+        for trace in user[d]:
+            # those trace with gps as -1,-1 (not clustered) should not assign a duration
+            if float(trace[6]) == -1: trace[9] = -1
+            ## our default output format: give -1 to non-stay records
+            if float(trace[9]) < dur_constr: # change back keep full trajectory: do not use center for those are not stays
+                trace[6], trace[7], trace[8], trace[9] = -1, -1, -1, -1  # for no stay, do not give center
+
     return user
 
 
-def diameterExceedCnstr(traj,i,j, spat_constr):
-    """
-    The Diameter function computes the greatest distance between any two locations with in the set traj[i:j]
-    and compare the distance with constraint
-    remember, computing distance() is costly
-    :param traj:
-    :param i:
-    :param j:
-    :param spat_constr:
-    :return: Ture or False
-    """
-    loc = list(set([(round(float(traj[m][3]),5),round(float(traj[m][4]),5))  for m in range(i,j+1)]))# unique locations
-    if len(loc) <= 1:
-        return False
-    if distance(traj[i][3],traj[i][4],traj[j][3],traj[j][4])>spat_constr: # check the first and last trace
-        return True
-    else:
-        # guess the max distance pair; approximate distance
-        pairloc = list(combinations(loc, 2))
-        max_i = 0
-        max_d = 0
-        for i in range(len(pairloc)):
-            appx_d = abs(pairloc[i][0][0] - pairloc[i][1][0]) \
-                     + abs(pairloc[i][0][1] - pairloc[i][1][1])
-            if appx_d > max_d:
-                max_d = appx_d
-                max_i = i
-        if distance(pairloc[max_i][0][0], pairloc[max_i][0][1], pairloc[max_i][1][0],
-                    pairloc[max_i][1][1]) > spat_constr:
-            return True
-        else:
-            #try to reduce the size of pairloc
-            max_ln_lat = (abs(pairloc[max_i][0][0] - pairloc[max_i][1][0]),
-                          abs(pairloc[max_i][0][1] - pairloc[max_i][1][1]))
-            m = 0
-            while m < len(pairloc):
-                if abs(pairloc[m][0][0] - pairloc[m][1][0]) < max_ln_lat[0] \
-                        and abs(pairloc[m][0][1] - pairloc[m][1][1]) < max_ln_lat[1]:
-                    del pairloc[m]
-                else:
-                    m += 1
-            diam_list = [distance(pair[0][0], pair[0][1], pair[1][0], pair[1][1]) for pair in pairloc]
-            if max(diam_list) > spat_constr:
-                return True
-            else:
-                return False

@@ -26,7 +26,7 @@ def combineGPSandPhoneStops(arg):
     pairs_close = set()
     for cell_stay in cell_stays:
         for gps_stay in gps_stays:
-            if distance(cell_stay[0],cell_stay[1],gps_stay[0],gps_stay[1])<=spat_constr_gps:
+            if distance(cell_stay[0],cell_stay[1],gps_stay[0],gps_stay[1]) <= spat_constr_gps:
                 pairs_close.add((gps_stay[0],gps_stay[1],cell_stay[0],cell_stay[1]))
                 break
     # find all pair[1]s in list, and replace it with pair[0]
@@ -43,23 +43,23 @@ def combineGPSandPhoneStops(arg):
             user[d] = sorted(user[d], key=itemgetter(0))
 
     # address oscillation
-    OscillationPairList = oscillation_h1_oscill(user, dur_constr)  # in format: [, [ping[0], ping[1], pong[0], pong[1]]]
-    gpslist_temp = {(trace[6], trace[7]):int(trace[5]) for d in user.keys() for trace in user[d]}
-    for pair_i in range(len(OscillationPairList)):#when replaced, can only replaced with a gps stay
-        if gpslist_temp[(OscillationPairList[pair_i][0],OscillationPairList[pair_i][1])] <= spat_constr_gps:
-            OscillationPairList[pair_i] = [OscillationPairList[pair_i][2],OscillationPairList[pair_i][3],
-                                           OscillationPairList[pair_i][0],OscillationPairList[pair_i][1]]
-    # find all pair[1]s in list, and replace it with pair[0]
-    for pair in OscillationPairList:
-        for d in user.keys():
-            for trace in user[d]:
-                if (trace[6], trace[7]) == (trace[2], trace[3]):
-                    trace[6], trace[7] = pair[0], pair[1]
+    user = oscillation_h1_oscill(user, dur_constr) #OscillationPairList = oscillation_h1_oscill(user, dur_constr)
+    # ## when replaced, can only replaced with a gps stay; so let modify exchange ping-pong pair in the pairList
+    # gpslist_temp = {(trace[6], trace[7]):int(trace[5]) for d in user.keys() for trace in user[d]}
+    # for pair_i in range(len(OscillationPairList)):
+    #     if gpslist_temp[(OscillationPairList[pair_i][0],OscillationPairList[pair_i][1])] <= spat_constr_gps:# wrong(2,3)
+    #         OscillationPairList[pair_i] = [OscillationPairList[pair_i][2],OscillationPairList[pair_i][3],
+    #                                        OscillationPairList[pair_i][0],OscillationPairList[pair_i][1]]
+    ## find pong in trajactory, and replace it with ping
+    ## this part is now integreted into the function itself
+    ## OscillationPairList is in format: {, (ping[0], ping[1]): (pong[0], pong[1])}
+    # for d in user.keys():
+    #     for trace in user[d]:
+    #         if (trace[6], trace[7]) in OscillationPairList:
+    #             trace[6], trace[7] = OscillationPairList[(trace[6], trace[7])]
+
     # update duration
-    user = update_duration(user)
-    for d in user:
-        for trace in user[d]:  # those trace with gps as -1,-1 (not clustered) should not assign a duration
-            if float(trace[6]) == -1: trace[9] = -1
+    user = update_duration(user, dur_constr)
 
     for d in user:
         phone_index = [k for k in range(len(user[d])) if int(user[d][k][5]) > spat_cell_split]
@@ -466,23 +466,25 @@ def combineGPSandPhoneStops(arg):
                     digits = digits[:2] + str(int(digits[2:4]) / 25)
                     trace[7] = (trace[7].split('.'))[0] + '.' + digits
                     # trace[7] = trace[7][:7] + str(int(trace[7][7:9]) / 25)  # -122.3400 to -122.3425  180 meters
+
     # added to address oscillation
-    OscillationPairList = oscillation_h1_oscill(user, dur_constr)  # in format: [, [ping[0], ping[1], pong[0], pong[1]]]
-    # find all pair[1]s in list, and replace it with pair[0]
-    for pair in OscillationPairList:
-        for d in user.keys():
-            for trace in user[d]:
-                if trace[6] == pair[2] and trace[7] == pair[3]:
-                    trace[6], trace[7] = pair[0], pair[1]
+    user = oscillation_h1_oscill(user, dur_constr)
+    ## find pong in trajactory, and replace it with ping
+    ## this part is now integreted into the function itself
+    ## OscillationPairList is in format: {, (ping[0], ping[1]): (pong[0], pong[1])}
+    # for d in user.keys():
+    #     for trace in user[d]:
+    #         if (trace[6], trace[7]) in OscillationPairList:
+    #             trace[6], trace[7] = OscillationPairList[(trace[6], trace[7])]
 
     # update duration
-    user = update_duration(user)
+    user = update_duration(user, dur_constr)
 
     #  end addressing oscillation
     #  those newly added stays should be combined with close stays
-    user = cluster_incremental(user, spat_constr_gps, dur_constr)
+    user = cluster_incremental(user, spat_constr_gps, dur_constr=dur_constr)
     #  update duration
-    user = update_duration(user)
+    user = update_duration(user, dur_constr)
     #  use only one record for one stay
     for d in user:
         i = 0
