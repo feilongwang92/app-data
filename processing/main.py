@@ -15,11 +15,14 @@ Add comments to share with Yuanjie
 from __future__ import print_function
 
 
-workdir = 'E:\\ProgramData\\python\cuebiq_share_git\\app-data\\testdata\\'
-file2process = 'part201911_00_test0429.csv'
-output2file = 'trip_identified_part201911_01-test0429.csv'
+workdir = 'E:\\ProgramData\\python\cuebiq_share_git\\app-data\\testdata\\test4ian\\'
+file2process = 'anExample.csv'
+output2file = 'trip_identified_anExample.csv'
 
-
+## give column names to the processed records
+f = open(workdir + output2file, 'wb')
+f.write('unix_start_t\tuser_ID\tmark_1\torig_lat\torig_long\torig_unc\tstay_lat\tstay_long\tstay_unc\tstay_dur\tstay_ind\thuman_start_t\n')
+f.close()
 
 ###  Important arguments  ###
 # part_num = '00'            # which data part to run
@@ -126,87 +129,69 @@ if __name__ == '__main__':
        each day is list containing all traces; traces are temporally ordered (ordered in file already);
     2. utilizing parallel computing: each user is processed with an indepedent processor
     """
-
-    # time period covered by the data
-    day_list = ['19110' + str(i) if i < 10 else '1911' + str(i) for i in range(1, 31)]
-
-    l = Lock() # parallel computing thread locker
+    ## for parallel computing
+    l = Lock() # thread locker
     pool = Pool(cpu_count(), initializer=init, initargs=(l,))
 
-    ## get ID list from file
+
+    ## get time period covered by the data and user ID from file
+    day_list = set() # time period covered by the data
+    usernamelist = set() # user names
     with open(workdir + file2process) as csvfile:
+        csvfile.next()
         readCSV = csv.reader(csvfile, delimiter='\t')
-        usernamelist = set([row[1] for row in readCSV])  # the second colume is userID
+        for row in readCSV:
+            day_list.add(row[-1][:6])  # the last colume is humantime, in format 200506082035
+            usernamelist.add(row[1])  # get ID list; the second colume is userID
+    day_list = sorted(list(day_list))
+    usernamelist = list(usernamelist)
 
-    print(len(usernamelist))
+    print('total number of users to be processed: ', len(usernamelist))
 
-    # read data: split usernamelist_infile into several bulks; each has user_num_in_mem=1000 users
-    # Then, evey loop, process only 1000 users, otherwise, no enough memory.
-    usernamebulks = []
-    counti = 0
-    namebulk = []
-    for name in usernamelist:
-        if (counti < user_num_in_mem):
-            namebulk.append(name)
-            counti += 1
-        else:
-            usernamebulks.append(namebulk)
-            namebulk = []
-            namebulk.append(name)
-            counti = 1
-    usernamebulks.append(namebulk)  # the last one which is smaller than 10000
+    '''
+        read data: split usernamelist_infile into several chunks; each has user_num_in_mem=1000 users
+        Then, evey loop, process only a chunk of users, otherwise, PC may have no enough memory.
+    '''
+    ## chunks from usernamelist.
+    def divide_chunks(usernamelist, n):
+        for i in range(0, len(usernamelist), n): # looping till length usernamelist
+            yield usernamelist[i:i + n]
 
-    usernamelist = None
-    print(len(usernamebulks))
-    print(sum([len(bulk) for bulk in usernamebulks]))
+    ## user_num_in_mem: How many elements each chunk should have
+    usernamechunks = list(divide_chunks(usernamelist, user_num_in_mem))
+
+    print('number of chunks to be processed', len(usernamechunks))
 
     ## read and process traces for one bulk
-    while (len(usernamebulks)):
-        bulkname = usernamebulks.pop()
-        print("Start processing bulk: ", len(usernamebulks) + 1,
-              ' at time: ', time.strftime("%m%d-%H:%M"), ' memory: ', psutil.virtual_memory().percent)
+    while (len(usernamechunks)):
+        namechunk = usernamechunks.pop()
+        print("Start processing bulk: ", len(usernamechunks) + 1, ' at time: ', time.strftime("%m%d-%H:%M"), ' memory: ', psutil.virtual_memory().percent)
 
         # data structure in memory: a dictionary of dictionary: organized by user and then by day
         # UserList = {name0: {day0:[], day1:[]...}, name1:{day0:[], day1:[]...}, ...}
-        UserList = {name: defaultdict(list) for name in bulkname}  # {name:{day: [] for day in day_list},name:{}...}
+        UserList = {name: defaultdict(list) for name in namechunk}
 
-        with open(workdir + file2process) as readfile:  # traces_to_be_processed
+        with open(workdir + file2process) as readfile:
+            readfile.next()
             readCSV = csv.reader(readfile, delimiter='\t')
             for row in readCSV:
+                if '.' not in row[3] or '.' not in row[4]: continue # debug a data issue: not '.' in lat or long
                 name = row[1]
                 if name in UserList:
-                    # if row[-1][:6] not in day_list or row[3]=='NaN': continue
-                    if row[-1][:6] not in day_list: continue
                     ### each input row is in format: 1573773245 3dd3bc7f67 0 47.3874765 -122.2401154 26	191114161405
-                    ### converted and storeed in memory with format (12 col): 1573773245 None 0 47.3874765 -122.2401154 26 -1 -1 -1 -1 -1 191114161405
-                    row[1] = None
-                    row.extend([-1, -1, -1, -1, -1])  # standardizing data structure; add -1 will be filled by results
-                    row[6], row[11] = row[11], row[6]  # put human time to the last col
-                    row[5] = int(float(row[5]))
-                    # append this record to one day
-                    # be careful here! the human time may be different in psrc 2017 and 19 data!
-                    if int(row[-1][6:8]) < 3:  # row[-1] is humman time 191114161405: 2019-11-14-16:14
-                        whichday = day_list.index(row[-1][:6]) - 1  ## effective day; go to previous day
-                        if whichday < 0: continue
-                        UserList[name][day_list[whichday]].append(row)
-                    else:
-                        UserList[name][row[-1][:6]].append(row)
+                    ### append this record to its date
+                    UserList[name][row[-1][:6]].append(row)
 
-        '''
-            sort users and a user having more records takes a cpu core earlier
-        '''
-        sortednames = {}
+        ## convert the structure of each record before processing
+        ## the original format (7 columns), for exampel, 1573773245 3dd3bc7f67 0 47.3874765 -122.2401154 26	191114161405
+        ## format after conversion (12 col): 1573773245 None 0 47.3874765 -122.2401154 26 -1 -1 -1 -1 -1 191114161405
         for name in UserList:
-            for day in UserList[name]:  # debug a data issue
-                i = 0
-                while i < len(UserList[name][day]):
-                    if '.' not in UserList[name][day][i][3] or '.' not in UserList[name][day][i][4]:
-                        del UserList[name][day][i]
-                    else:
-                        i += 1
-            sortednames[name] = sum([len(UserList[name][day]) for day in UserList[name]])  # process easy ones first
-        sortednames = sorted(sortednames.items(), key=lambda kv: kv[1], reverse=True)
-        sortednames = [item[0] for item in sortednames]
+            for day in UserList[name]:
+                for row in UserList[name][day]:
+                    row[1] = None  # save memory: user id is long and cost memory
+                    row[5] = int(float(row[5]))  # convert uncertainty radius to integer
+                    row.extend([-1, -1, -1, -1, -1])# standardizing data structure; add -1 will be filled by info of stays
+                    row[6], row[-1] = row[-1], row[6]  # push human time to the last column
 
         print("End reading; start calculating...")
 
@@ -214,13 +199,10 @@ if __name__ == '__main__':
         ## each task is to process one user's data, parameter: (name, UserList[name], dur_constr, spat_constr_gps, spat_constr_cell, spat_cell_split, workdir)
         tasks = [pool.apply_async(mainfunc_identify_trip_ends, (task,)) for task in
                  [(name, UserList[name], dur_constr, spat_constr_gps, spat_constr_cell, spat_cell_split, workdir)
-                  for name in sortednames]]
+                  for name in UserList]]
         finishit = [t.get() for t in tasks]
-        # map is not a good idea
-        # pool.map(func_identify_trip_ends, [(name, UserList[name], dur_constr, spat_constr_gps, spat_constr_cell,
-        #                                     spat_cell_split, outfile_workdir) for name in sortednames]) # process easy ones first
 
-        print('End processing bulk: ', len(usernamebulks) + 1, ' memory: ', psutil.virtual_memory().percent)
+        print('End processing bulk: ', len(usernamechunks) + 1, ' memory: ', psutil.virtual_memory().percent)
 
     pool.close()
     pool.join()
