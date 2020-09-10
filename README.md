@@ -24,7 +24,7 @@ According to emails from Cuebiq, data are processed at 12AM UTC and there can al
 Figure 1 includes several snaps showing how data are organized in folders, as introduced above. Each day is a folder containing many smaller gzipped files. After each of the smaller gzipped files is unzipped, it becomes a csv file containing multiple users. The size of each csv file is similar. It is possible that a single user have the same, similar or different records showing in multiple files for the same day. Each record contains 7 fields, including Timestamp, ID, ID Type, Latitude, Longitude, Accuracy, Time zone offset. The meaning of each column is provided in another document named “Dictionaries of Cuebiq data and notes of data processing by Feilong.doc”.
 
 
-![](https://pandao.github.io/editor.md/examples/images/4.jg)
+![](https://github.com/feilongwang92/mining-app-data/blob/master/figures%20for%20README/snaps-app-data-folders.PNG)
 
 > Figure 1. Directory structure of the data before and after step 1. (a) organized by the data vendor, records of each day are within one folder but not in one file (figure shows 9 days); (b) in each folder, there are hundreds of small zipped, csv files, each containing thousands of records belonging to multiple users; (c) after step 1 (unzip and combine small files), records on one day are in one csv file (figure shows 9 days).
 
