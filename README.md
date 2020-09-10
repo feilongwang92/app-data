@@ -1,6 +1,27 @@
-[TOCM]
+**Table of Content**
+- [Introduction to the data structure of raw app-based data](#introduction-to-the-data-structure-of-raw-app-based-data)
+  * [Raw Data Folders](#raw-data-folders)
+  * [Raw Data Files](#raw-data-files)
+- [Codes in Preprocessing Folder:](#codes-in-preprocessing-folder-)
+  * [[step1_unzip_combine_file.py](https://github.com/feilongwang92/app-data/blob/master/preprocessing/step1_unzip_combine_file.py "step1_unzip_combine_file.py")](#-step1-unzip-combine-filepy--https---githubcom-feilongwang92-app-data-blob-master-preprocessing-step1-unzip-combine-filepy--step1-unzip-combine-filepy--)
+  * [[step2_getAllUserId.py](https://github.com/feilongwang92/app-data/blob/master/preprocessing/step2_getAllUserId.py "step2_getAllUserId.py")](#-step2-getalluseridpy--https---githubcom-feilongwang92-app-data-blob-master-preprocessing-step2-getalluseridpy--step2-getalluseridpy--)
+  * [[step3_gatherTracesofEachUser_removeDuplicate.py](https://github.com/feilongwang92/app-data/blob/master/preprocessing/step3_gatherTracesOfEachUser_RemoveDuplicate.py "step3_gatherTracesofEachUser_removeDuplicate.py")](#-step3-gathertracesofeachuser-removeduplicatepy--https---githubcom-feilongwang92-app-data-blob-master-preprocessing-step3-gathertracesofeachuser-removeduplicatepy--step3-gathertracesofeachuser-removeduplicatepy--)
+- [Codes in Processing Folder](#codes-in-processing-folder)
+  * [[main.py](https://github.com/feilongwang92/app-data/blob/master/processing/main.py "main.py")](#-mainpy--https---githubcom-feilongwang92-app-data-blob-master-processing-mainpy--mainpy--)
+    + [[gps_traces_clustering.py](https://github.com/feilongwang92/app-data/blob/master/processing/gps_traces_clustering.py "gps_traces_clustering.py")](#-gps-traces-clusteringpy--https---githubcom-feilongwang92-app-data-blob-master-processing-gps-traces-clusteringpy--gps-traces-clusteringpy--)
+    + [[cellular_traces_clustering.py](https://github.com/feilongwang92/app-data/blob/master/processing/cellular_traces_clustering.py "cellular_traces_clustering.py")](#-cellular-traces-clusteringpy--https---githubcom-feilongwang92-app-data-blob-master-processing-cellular-traces-clusteringpy--cellular-traces-clusteringpy--)
+    + [[combine_stays_phone_gps.py](https://github.com/feilongwang92/app-data/blob/master/processing/combine_stays_phone_gps.py "combine_stays_phone_gps.py")](#-combine-stays-phone-gpspy--https---githubcom-feilongwang92-app-data-blob-master-processing-combine-stays-phone-gpspy--combine-stays-phone-gpspy--)
+    + [[incremental_clustering.py](https://github.com/feilongwang92/app-data/blob/master/processing/incremental_clustering.py "incremental_clustering.py")](#-incremental-clusteringpy--https---githubcom-feilongwang92-app-data-blob-master-processing-incremental-clusteringpy--incremental-clusteringpy--)
+    + [[trace_segmentation_clustering.py](https://github.com/feilongwang92/app-data/blob/master/processing/trace_segmentation_clustering.py "trace_segmentation_clustering.py")](#-trace-segmentation-clusteringpy--https---githubcom-feilongwang92-app-data-blob-master-processing-trace-segmentation-clusteringpy--trace-segmentation-clusteringpy--)
+    + [[class_cluster.py](https://github.com/feilongwang92/app-data/blob/master/processing/class_cluster.py "class_cluster.py")](#-class-clusterpy--https---githubcom-feilongwang92-app-data-blob-master-processing-class-clusterpy--class-clusterpy--)
+    + [[oscillation_type1.py](https://github.com/feilongwang92/app-data/blob/master/processing/oscillation_type1.py "oscillation_type1.py")](#-oscillation-type1py--https---githubcom-feilongwang92-app-data-blob-master-processing-oscillation-type1py--oscillation-type1py--)
+    + [[distace.py](https://github.com/feilongwang92/app-data/blob/master/processing/distance.py "distace.py")](#-distacepy--https---githubcom-feilongwang92-app-data-blob-master-processing-distancepy--distacepy--)
+    + [[util_func.py](https://github.com/feilongwang92/app-data/blob/master/processing/util_func.py "util_func.py")](#-util-funcpy--https---githubcom-feilongwang92-app-data-blob-master-processing-util-funcpy--util-funcpy--)
+- [Codes in Postprocessing Folder](#codes-in-postprocessing-folder)
+  * [[home_work.py](https://github.com/feilongwang92/app-data/blob/master/postprocessing/home_work.py "home_work.py")](#-home-workpy--https---githubcom-feilongwang92-app-data-blob-master-postprocessing-home-workpy--home-workpy--)
+- [Notes of running and understanding the codes](#notes-of-running-and-understanding-the-codes)
 
-[TOC]
+<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
 
 The codes are in three folders, including the preprocessing, processing, and postprocessing folders. 
@@ -10,6 +31,10 @@ The codes are in three folders, including the preprocessing, processing, and pos
 - The codes in the processing folder are to extract trip ends from the data. The methodology based on which the codes are developed can be found in the recently published paper "[*Extracting trips from multi-sourced data for mobility pattern analysis: An app-based data example*](https://www.sciencedirect.com/science/article/pii/S0968090X18316085)". 
 
 - The codes in the postprocessing folder serve examples of using the processing data for mobility pattern analyses.
+
+
+
+
 
 In the following, codes in each folder are introduced in detail. Comments embedded in the codes are also helpful to understand the codes. A workflow for processing the data is introduced in file "Workflow of data processing". You may find it helpful to understand the codes in the processing folder. 
 
