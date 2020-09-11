@@ -10,12 +10,24 @@ from math import cos, asin, sqrt
 from operator import itemgetter
 from collections import defaultdict
 
-user_num_in_mem = 1000  # read how many users from the data into memory; depending on your PC memory size
-work_dir = 'E:\\cuebiq_psrc_201911\\processed\\'       #
-file2process = 'trip_identified_part201911_01.csv'
+import sys, os
+
+
+# parse command-line arguments that are given from command line
+# specify the input: a data file containing processed data
+file2process = str(sys.argv[1]) # (e.g., "E:/ProgramData/python/cuebiq_share_git/app-data-master/data/processed/processed_00.csv")
+batchsize = int(sys.argv[2])  # to prevent memory overflow, split data into batches; each time, read one batch of data into memory and proce (e.g., 1000 users)
 
 
 def distance(lat1, lon1, lat2, lon2):
+    """
+    Compute geodesic distance between two locations
+    :param lat1: latitude of location 1
+    :param lon1: longitude of location 1
+    :param lat2: latitude of location 2
+    :param lon2: longitude of location 2
+    :return: distance between two locations in Km
+    """
     lat1 = float(lat1)
     lon1 = float(lon1)
     lat2 = float(lat2)
@@ -25,10 +37,10 @@ def distance(lat1, lon1, lat2, lon2):
     return 12742 * asin(sqrt(a))
 
 
-def find_home_locations(user):
+def find_home_locations(user, weeks):
     # refer alexander 2015 part c
-    #user in form {day0:[end0,end1], day1:[end0,end2]}  191101133857
-    weeks = 4
+    # user in form {day0:[end0,end1], day1:[end0,end2]}  191101133857
+    # weeks  #number of weeks of the study period, used by a rule: at least once a week
     # get destinations
     destinationsList_home = {(trace[6], trace[7]):0 for d in user for trace in user[d]}
     # count visit freq to find home
@@ -88,40 +100,41 @@ def find_work_locations(arg):
 
 
 if __name__ == '__main__':
-    day_list = ['19110' + str(i) if i < 10 else '1911' + str(i) for i in range(1, 31)]
+    ## specify the study period: 191101-191131 means from Nov 1 to Nov 31, 2019
+    day_list = ['19110' + str(i) if i < 10 else '1911' + str(i) for i in range(1, 8)]
 
-    day_list = {day:i for i, day in enumerate(day_list)}  # convert string day to int day: 0403->0
+    # ## get time period covered by the data and user ID from file
+    # day_list = set() # time period covered by the data
+    # with open(file2process) as csvfile:
+    #     csvfile.next()
+    #     readCSV = csv.reader(csvfile, delimiter='\t')
+    #     for row in readCSV:
+    #         day_list.add(row[-1][:6])  # the last colume is humantime, in format 200506082035
+    # day_list = sorted(list(day_list))
 
-    # inputfilelist = glob.glob(work_dir + 'trip_identified_part_*.csv')
-    # inputfilelist = [work_dir + 'trip_identified_longTraces.csv']
+    day_list = {day:i for i, day in enumerate(day_list)}  # convert string day to int day: 191101->0
 
+    '''
+        read data: get username list, split usernamelist into several batches; each has user_num_in_mem=1000 users
+        Then, evey loop, process only a batch of users, otherwise, PC may have no enough memory.
+    '''
     with open(file2process) as csvfile:
         readCSV = csv.reader(csvfile, delimiter='\t')
-        # next(readCSV)
-        usernamelist_1 = list(set([row[1] for row in readCSV]))
+        # next(readCSV) # skip the first line if it is a header line
+        usernamelist = list(set([row[1] for row in readCSV]))
 
-    # split into several bucks of names
-    usernamelist = []
-    counti = 0
-    namebulk = []
-    for name in usernamelist_1:
-        if (counti < user_num_in_mem):
-            namebulk.append(name)
-            counti += 1
-        else:
-            usernamelist.append(namebulk)
-            namebulk = []
-            namebulk.append(name)
-            counti = 1
-    usernamelist.append(namebulk)  # the last one which is smaller than 100000
+    # split into user IDs into batches
+    def divide_batchs(usernamelist, n):
+        for i in range(0, len(usernamelist), n):  # looping till length usernamelist
+            yield usernamelist[i:i + n]
 
-    usernamelist_1 = None
-    print(len(usernamelist))
-    print(sum([len(bulk) for bulk in usernamelist]))
+    usernamebatches = list(divide_batchs(usernamelist, batchsize))## batchsize: How many elements each batch should have
 
-    while (len(usernamelist)):  # evey loop, process only user_num_in_mem users, otherwise, no enough memory.
-        bulkname = usernamelist.pop()
-        print("Start processing bulk: ", len(usernamelist) + 1,
+    print('number of batches to be processed', len(usernamebatches))
+
+    while (len(usernamebatches)):  # evey loop, process only user_num_in_mem users, otherwise, no enough memory.
+        bulkname = usernamebatches.pop()
+        print("Start processing bulk: ", len(usernamebatches) + 1,
               ' at time: ', time.strftime("%m%d-%H:%M"), ' memory: ', psutil.virtual_memory().percent)
 
         """ a dictionary of dictionary: 
@@ -131,7 +144,7 @@ if __name__ == '__main__':
 
         with open(file2process) as readfile:
             readCSV = csv.reader(readfile, delimiter='\t')
-            # next(readCSV)
+            next(readCSV)  # skip the first line if it is a header line
             for row in readCSV:
                 # 2017data: 1493613023	    40246	1	47.5520818	-122.2782114	5	47.5517786793	-122.278525341	131	3143	stay14	0430-21:30
                 # 2019data: 15726614   c670905299	1	47.3594055	-122.6070031	5	47.3603264	-122.6053931	99	20451	stay10	191101133857
@@ -139,19 +152,25 @@ if __name__ == '__main__':
                 name = row[1]
                 if name in UserList:
                     row[1] = None
-                    if int(row[-1][6:8]) < 3:  # effective day
-                        whichday = day_list[row[-1][:6]] - 1  # go to previous day
-                        if whichday < 0: continue
-                        UserList[name][whichday].append(row)
-                    else:
+                    if row[-1][:6] in day_list:
                         UserList[name][day_list[row[-1][:6]]].append(row)
+                    # if int(row[-1][6:8]) < 3:  # effective day
+                    #     whichday = day_list[row[-1][:6]] - 1  # go to previous day
+                    #     if whichday < 0: continue
+                    #     UserList[name][whichday].append(row)
+                    # else:
+                    #     UserList[name][day_list[row[-1][:6]]].append(row)
 
+        '''
+            computing
+        '''
+        numberOfWeeks = 1 # the length of the study period; this parameter will be used to infer home locations
         homes = {}
         for name in UserList:
-            result = find_home_locations(UserList[name])
+            result = find_home_locations(UserList[name], weeks=numberOfWeeks) ## weeks: number of weeks of the study period
             if result:
                 homes[name] = result
-        with open(r'E:\cuebiq_psrc_201911\results\home_inferred112019.csv', 'ab') as f:
+        with open('homes_inferred.csv', 'ab') as f:
             writeCSV = csv.writer(f, delimiter='\t')
             for name in homes:
                 writeCSV.writerow([name, homes[name][0], homes[name][1]])
@@ -163,12 +182,10 @@ if __name__ == '__main__':
             result = find_work_locations((UserList[name], homes[name]))
             if result:
                 works[name] = result
-        with open(r'E:\cuebiq_psrc_201911\results\workplace_inferred112019.csv', 'ab') as f:
+        with open('workplace_inferred.csv', 'ab') as f:
             writeCSV = csv.writer(f, delimiter='\t')
             for name in works:
                 writeCSV.writerow([name, works[name][0], works[name][1]])
 
     print('End calculation.')
-
-
 
