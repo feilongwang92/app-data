@@ -3,11 +3,12 @@
     data structure of a cluster
 '''
 
-import sys
+import sys, os
 import numpy as np
 
 
-sys.path.append("E:\\ProgramData\\python\\cuebiq_share_git")
+## import below only run in 'run' mode, not in 'console mode'
+sys.path.append(os.path.dirname(os.getcwd())) 
 from distance import distance
 
 

@@ -1,16 +1,11 @@
-"""
-integrating stays from processed cellular traj and gps traj
-function is modified on 04152019 to improve efficiency
-:param arg:
-:return: user traces
-"""
 
 
-import sys
+import sys, os
 
 from operator import itemgetter
 
-sys.path.append("E:\\ProgramData\\python\\cuebiq_share_git")
+## import below only run in 'run' mode, not in 'console mode'
+sys.path.append(os.path.dirname(os.getcwd())) 
 from distance import distance
 from oscillation_type1 import oscillation_h1_oscill
 from incremental_clustering import cluster_incremental
@@ -18,6 +13,30 @@ from util_func import update_duration
 
 
 def combineGPSandPhoneStops(arg):
+    """
+    This function is to combine processed cellular records (output of function cellular_traces_clustering) and
+    processed GPS records (output of function gps_traces_clustering) of one user ID.
+    The function implements an algorithm proposed by (Wang et al., 2019. Extracting trips from multi-sourced data for
+    mobility pattern analysis: An app-based data example. TR-C). Refer to the document "workflow of data processing" for
+    a brief introduction of the algorithm.
+    Function is modified on 04/15/2019 to improve computation efficiency.
+    :param arg: a tuple of 5 parameters:
+                - user_gps: the output of function gps_traces_clustering: processed gps traces (records) of the user
+                - user_cell: the output of function cellular_traces_clustering: processed cellular traces (records) of the user
+                - dur_constr: temporal constraint in seconds to define a stay (e.g., 300 seconds)
+                - spat_constr_gps: spatial constraint to define a gps stay (e.g., 0.2 Km)
+                - spat_cell_split: the threshold in meters for partitioning records into gps and cellular traces
+    :return user: It gives combined records of the input user ID. It is structured in a python dictionary.
+                  A key gives a date, and its value gives a list of records on the date.
+                  Each record has 12 fields, where stay information such as latitude, longitude, duration, uncertainty radius are included if the record is a stay.
+                  Each processed record in the output file could represent one of the two:
+                    1) a stay (either from cellular stays or GPS stays before the integration) with latitude, longitude,
+                       uncertainty radius, and positive stay duration;
+                    2) a transient point (a passing-by record) which is the same as a record in the original raw input
+                       file with stay duration marked as -1.
+    """
+
+    # unpack parameters
     user_gps, user_cell, dur_constr, spat_constr_gps, spat_cell_split = arg
 
     # combine cellular stay if it is close to a gps stay
@@ -188,7 +207,7 @@ def combineGPSandPhoneStops(arg):
                                                                                        user[d][phonestay_left][6],
                                                                                        user[d][phonestay_left][7])
                                 for j in range(phonestay_left + 1, phonestay_right, 1)]):
-                            #total uncerty larger than distance
+                            # total uncerty larger than distance
                             # this case should be rare, as those close gps may be clustered
                             # print('241: all gps falling betw are close with phone stay')
                             temp = user[d][phonestay_left][3:]  # copy neighbor gps

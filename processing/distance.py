@@ -1,18 +1,17 @@
-"""
-calculte distance between two gps points
-:param lat1:
-:param lon1:
-:param lat2:
-:param lon2:
-:return: distance in Km
-"""
 
 
 from math import cos, asin, sqrt
 
 
 def distance(lat1, lon1, lat2, lon2):
-    # geodesic distance; in kilometers
+    """
+    Compute geodesic distance between two locations
+    :param lat1: latitude of location 1
+    :param lon1: longitude of location 1
+    :param lat2: latitude of location 2
+    :param lon2: longitude of location 2
+    :return: geodesic distance between two locations in Km
+    """
     lat1 = float(lat1)
     lon1 = float(lon1)
     lat2 = float(lat2)

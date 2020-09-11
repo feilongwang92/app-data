@@ -7,13 +7,26 @@ remove oscillation traces
 """
 
 
-import sys
-sys.path.append("E:\\ProgramData\\python\\cuebiq_share_git")
+import sys, os
+## import below only run in 'run' mode, not in 'console mode'
+sys.path.append(os.path.dirname(os.getcwd())) 
 
 
 def oscillation_h1_oscill(user, dur_constr):
-    # user = user#arg[0]
-    TimeWindow = dur_constr#arg[1]#5 * 60
+    """
+    This function is to address oscillation traces in one user's trajectory;
+    Oscillation traces lead to false trips rather than reflecting users' actual movements and thus need to be removed.
+    The function implements a time-window-based method to detect and remove observations that are generated
+    from the occurrence of the signaling noises.
+    Please referred to Wang and Chen (2018) for the time-window-based method
+
+    :param user: a trajectory of one user to be processed; a record in the trajectory is either a transient point or a stay.
+                 It is structured in a dict. A key and its value give a date and the records on the date, respectively.
+    :param dur_constr: the length of the time window in seconds for identifying oscillation traces which is used in the time-window-based method
+    :return user: contains records of the input user ID with oscillation traces removed. The data structure is the same as the input.
+    """
+
+    TimeWindow = dur_constr #for example, 5 * 60 seconds
 
     tracelist = [] # we will be working on tracelist not user
     for d in sorted(user.keys()):
