@@ -30,13 +30,13 @@ The codes are in three folders, including the preprocessing, processing, and pos
 
 - The codes in the processing folder are to extract trip ends from the data. The methodology based on which the codes are developed can be found in the recently published paper "[*Extracting trips from multi-sourced data for mobility pattern analysis: An app-based data example*](https://www.sciencedirect.com/science/article/pii/S0968090X18316085)". 
 
-- The codes in the postprocessing folder serve examples of using the processing data for mobility pattern analyses.
+- The codes in the postprocessing folder serve examples of using the processed data for mobility pattern analyses.
 
 In the following, codes in each folder are introduced in detail. For each code file (python file), we introduce its purpose, input, output and provde an example to execute it. 
 
-Comments embedded in the codes should be helpful to understand the codes. A workflow for processing the data is introduced in file "Workflow of data processing". You may find it helpful to understand the codes in the processing folder. 
+Comments embedded in the python files (following the hyperlinks) should be helpful in understanding the codes. Workflow for processing the data is introduced in file "[Workflow of data processing.pdf](https://github.com/feilongwang92/app-data/blob/master/processing/Workflow%20of%20data%20processing.pdf "Workflow of data processing.pdf")". You may find it helpful to understand the codes in the processing folder. 
 
-At the end of this document, instructions for deploying the computational environment are specified. Note that codes are in **Python 2.7**. The outcomes could be sensitive to the computational environment. 
+At the end of this document, instructions for deploying the computational environment are specified. Note that codes are written in **Python 2.7**. The outcomes could be sensitive to the computational environment. 
 
 ## Introduction to the data structure of raw app-based data
 
@@ -46,31 +46,31 @@ Raw data are sorted into a series of gzipped files (introduced in the following)
 	2018010100 - meaning the data was processed on January 1, 2018
 	2018010200 - meaning the data was processed on January 2, 2018
 	2018010300 - meaning the data was processed on January 3, 2018
-According to emails from the data vendor, data are processed at 12AM UTC and there can also be a certain lag in the data. The data vendor receives the data as it is batched on a device before being sent to the data vendor's servers, therefore the timestamps in each dated folder may not represent only that day and could potentially include some data from additional dates.  The rule of thumb is that if each data folder will have 90+% of data for a given day looking at the data for that day and the following day. So, for example, 90+% of data for January 1, 2018 would be found in folders:
+According to emails from the data vendor, data are processed at 12AM UTC and there can also be a certain lag in the data. The data vendor receives the data as it is batched on a device before being sent to the data vendor's servers. Therefore the timestamps in each dated folder may not represent only that day and could potentially include some data from additional dates.  The rule of thumb is that if each data folder will have 90+% of data for a given day looking at the data for that day and the following day. So, for example, 90+% of data for January 1, 2018 would be found in folders:
 	2018010100 - meaning the data was processed on January 1, 2018
 	2018010200 - meaning the data was processed on January 2, 2018
 
 The code block below shows how raw data are organized in folders, as introduced above. Each day is a folder containing many smaller gzipped files. The size of each csv file is similar. It is possible that a single user have the same, similar or different records showing in multiple files for the same day. 
 
 
-> **Code block 1.** Directory structure of the raw data. Organized by the data vendor, records of each day are within one folder (e.g., 2019110100) but not in one file. In each folder, there are hundreds of small zipped, csv files, each containing thousands of records belonging to multiple users. You need to create a folder, name is "raw" and put the raw data under the folder. To preprocessing the raw data, you will input the directory ("data" in this example) where the "raw" folder is, so that the codes will find the raw data and store preprocessed data under "data". 
+> **Code block 1.** Directory structure of the raw data. Organized by the data vendor, records of each day are within one folder (e.g., 2019110100) but not in one file. In each folder, there are hundreds of small zipped csv files, each containing thousands of records belonging to multiple users. You need to create a folder, name it "raw" and put the raw data under the folder. Later, to preprocessing the raw data, you will input the directory ("data" in this example) that includes the "raw" folder, so that the programs will find the raw data and store outputted data under "data". 
 
 ```bash
-├── data
-│   ├── raw
-│   │   ├── 2019110100
-│   │   │   ├── part-00000-96e7044e-3c10-4b04-94d9-be8eaa57f2b1-c000.csv.gz
-│   │   │   ├── part-00001-96e7044e-3c10-4b04-94d9-be8eaa57f2b1-c000.csv.gz
-│   │   │   └── ...
-│   │   ├── 2019110200
-│   │   │   ├── part-00000-b821e85f-6642-4ef2-b0da-64631ddec6a4-c000.csv.gz
-│   │   │   ├── part-00001-b821e85f-6642-4ef2-b0da-64631ddec6a4-c000.csv.gz
-│   │   │   └── ...
-│   │   └── ...
++-- data
+¦   +-- raw
+¦   ¦   +-- 2019110100
+¦   ¦   ¦   +-- part-00000-96e7044e-3c10-4b04-94d9-be8eaa57f2b1-c000.csv.gz
+¦   ¦   ¦   +-- part-00001-96e7044e-3c10-4b04-94d9-be8eaa57f2b1-c000.csv.gz
+¦   ¦   ¦   +-- ...
+¦   ¦   +-- 2019110200
+¦   ¦   ¦   +-- part-00000-b821e85f-6642-4ef2-b0da-64631ddec6a4-c000.csv.gz
+¦   ¦   ¦   +-- part-00001-b821e85f-6642-4ef2-b0da-64631ddec6a4-c000.csv.gz
+¦   ¦   ¦   +-- ...
+¦   ¦   +-- ...
 ```
 
 ### Raw Data Files
-Each small gzipped file is in csv format; each row gives an observation, containing 7 columns/fields, which are seprated by TAB. Table 1 gives a sample of synthetic observations and Table 2 explains each field of an observation. 
+Each small gzipped file is in csv format; each row gives an observation, containing 7 columns/fields, which are separated by TAB. Table 1 gives a sample of synthetic observations, and Table 2 explains each field of observations. 
 
 **Table 1. A sample of raw data.**
 
@@ -98,81 +98,81 @@ There are three python files in the preprocessing folder; each is introduced bel
 
 ### [step1_unzip_combine_file.py](https://github.com/feilongwang92/app-data/blob/master/preprocessing/step1_unzip_combine_file.py "step1_unzip_combine_file.py")
 
-Codes in this file is to process the zipped files originally provided, unzip them, and put them into another folder as a user-specified code. 
+Codes in this file is to process the zipped files originally provided, unzip them, and put them into another folder "unzipped".  
 - Input: the directory where the raw data files are stored. 
-- Output: a new folder "unzipped" under the input directory containing multiple csv files. In the folder, there will be one csv file containing all the users for one day. For example, if the time period is 60 days, there will be 60 csv files generated. 
+- Output: a new folder "unzipped" is created and appears under the input directory; the folder contains multiple csv files, each of which contains all the users for one day. For example, if the time period is 60 days, there will be 60 csv files generated.   
 
 How to run it:  
 `python step1_unzip_combine_file.py "E:/data"`  
-Here, the string `"E:/data"` gives the directory of the raw folder.  Again, you need to create a folder, name is "raw" and put the raw data under the "raw" folder (as show by the structure in code block 1). The directory of your input ("data" in this example) is where the "raw" folder is. The codes will search your directory and find the "raw" data folder. 
+Here, the string `"E:/data"` gives the directory of the raw folder.  Again, you need to create a folder, name it "raw" and put the raw data under the "raw" folder (as shown by the structure in code block 1). Your input directory ("data" in this example) is the parent directory that includes the "raw" folder is. The codes will search your input directory and find the "raw" data folder. 
 
-After the small gzipped files in each folder is unzipped, data in one folder becomes a csv file. After step 1, the data directory should looks like the one in code block 2 (see below). Compare with the directory in code block 1, a new folder "unzipped" is created and each file in "unzipped" is a csv file.
+After the small gzipped files in each folder are unzipped, data in one folder becomes a csv file. After step 1, the data directory should look like the one in code block 2 (see below). Compare with the directory in code block 1, a new folder "unzipped" is created and each file in "unzipped" is a csv file.
 
 > **Code block 2.** Directory structure after preprocessing step 1.
 
 ```bash
-├── data
-│   ├── raw
-│   │   ├── 2019110100
-│   │   │   ├── part-00000-96e7044e-3c10-4b04-94d9-be8eaa57f2b1-c000.csv.gz
-│   │   │   ├── part-00001-96e7044e-3c10-4b04-94d9-be8eaa57f2b1-c000.csv.gz
-│   │   │   └── ...
-│   │   ├── 2019110200
-│   │   │   ├── part-00000-b821e85f-6642-4ef2-b0da-64631ddec6a4-c000.csv.gz
-│   │   │   ├── part-00001-b821e85f-6642-4ef2-b0da-64631ddec6a4-c000.csv.gz
-│   │   │   └── ...
-│   │   └── ...
-│   ├── unzipped
-│   │   ├── 20191101.csv
-│   │   ├── 20191101.csv
-│   │   └── ...
++-- data
+¦   +-- raw
+¦   ¦   +-- 2019110100
+¦   ¦   ¦   +-- part-00000-96e7044e-3c10-4b04-94d9-be8eaa57f2b1-c000.csv.gz
+¦   ¦   ¦   +-- part-00001-96e7044e-3c10-4b04-94d9-be8eaa57f2b1-c000.csv.gz
+¦   ¦   ¦   +-- ...
+¦   ¦   +-- 2019110200
+¦   ¦   ¦   +-- part-00000-b821e85f-6642-4ef2-b0da-64631ddec6a4-c000.csv.gz
+¦   ¦   ¦   +-- part-00001-b821e85f-6642-4ef2-b0da-64631ddec6a4-c000.csv.gz
+¦   ¦   ¦   +-- ...
+¦   ¦   +-- ...
+¦   +-- unzipped
+¦   ¦   +-- 20191101.csv
+¦   ¦   +-- 20191101.csv
+¦   ¦   +-- ...
 ```
 
 ### [step2_getAllUserId.py](https://github.com/feilongwang92/app-data/blob/master/preprocessing/step2_getAllUserId.py "step2_getAllUserId.py") 
 
-Extract user ids from the output files from the previous step. 
+Extract unique user IDs from the output files from the previous step and write the list of IDs to disk.
 - Input: the directory where the data files are stored. The codes will find the "unzipped" folder and the data files that are outputted from the previous step.
-- Output: a csv file containing all user ids. The file is stored under the input directory "data"; each row gives one user ID.
+- Output: a csv file containing all user ids. The file appears under the input directory; each row gives one user ID.
 
 How to run it:  
 `python step2_getAllUserId.py "E:/data"`  
-Here, the string `"E:/data"` gives the folder directory of the unzipped data. 
+Here, the string `"E:/data"` gives the parent directory that includes folder "unzipped", which contains the unzipped data files. 
 
-After step 2, your data directory should contain a new csv file "usernamelist.csv", which appears under "data". 
+After step 2, your data directory should contain a new csv file “usernamelist.csv” (see code block 3 below). 
 
 > **Code block 3.** Directory structure after preprocessing step 2. 
 
 ```bash
-├── data
-│   ├── raw
-│   │   ├── 2019110100
-│   │   │   ├── part-00000-96e7044e-3c10-4b04-94d9-be8eaa57f2b1-c000.csv.gz
-│   │   │   ├── part-00001-96e7044e-3c10-4b04-94d9-be8eaa57f2b1-c000.csv.gz
-│   │   │   └── ...
-│   │   ├── 2019110200
-│   │   │   ├── part-00000-b821e85f-6642-4ef2-b0da-64631ddec6a4-c000.csv.gz
-│   │   │   ├── part-00001-b821e85f-6642-4ef2-b0da-64631ddec6a4-c000.csv.gz
-│   │   │   └── ...
-│   │   └── ...
-│   ├── unzipped
-│   │   ├── 20191101.csv
-│   │   ├── 20191101.csv
-│   │   └── ...
-└── usernamelist.csv
++-- data
+¦   +-- raw
+¦   ¦   +-- 2019110100
+¦   ¦   ¦   +-- part-00000-96e7044e-3c10-4b04-94d9-be8eaa57f2b1-c000.csv.gz
+¦   ¦   ¦   +-- part-00001-96e7044e-3c10-4b04-94d9-be8eaa57f2b1-c000.csv.gz
+¦   ¦   ¦   +-- ...
+¦   ¦   +-- 2019110200
+¦   ¦   ¦   +-- part-00000-b821e85f-6642-4ef2-b0da-64631ddec6a4-c000.csv.gz
+¦   ¦   ¦   +-- part-00001-b821e85f-6642-4ef2-b0da-64631ddec6a4-c000.csv.gz
+¦   ¦   ¦   +-- ...
+¦   ¦   +-- ...
+¦   +-- unzipped
+¦   ¦   +-- 20191101.csv
+¦   ¦   +-- 20191101.csv
+¦   ¦   +-- ...
++-- usernamelist.csv
 ```
 
 ### [step3_gatherTracesofEachUser_removeDuplicate.py](https://github.com/feilongwang92/app-data/blob/master/preprocessing/step3_gatherTracesOfEachUser_RemoveDuplicate.py "step3_gatherTracesofEachUser_removeDuplicate.py") 
 
-Take in the previous output files, for each user, scan through all unzipped files and append observations for the same user together, so that for a single user, all his/her records will be contained in a single file. Sort all records for each user by time and remove duplicates (if multiple records have the same time but different location information, you retain the record with lower uncertainty). 
+Take in the previous output files, for each user, scan through all unzipped files and append observations for the same user together, so that for a single user, all his/her records will be contained in a single file. Sort all records for each user by time and remove duplicates (if multiple records have the same time but different location information, we retain the record with lower uncertainty). 
 
-- Input: Two arguments: 1) The data directory where the user name list (from step 2) and unzipped data files (from step 1 above) are stored. The codes will search for "usernamelist.csv" and folder "unzipped". 2) Batch size (e.g., 5000). To avoid memory overflow, users are split into small batches and one batch of users are read in memory for preprocessing at one time.  
+- Input: Two arguments: 1) The data directory where the user name list (from step 2) and unzipped data files (from step 1 above) are stored. Given the parent directory, the program will search for "usernamelist.csv" and folder "unzipped". 2) Batch size (e.g., 5000). In order to avoid memory overflow, users are split into small batches and only one batch of users are read in memory for preprocessing at one round of computation.   
 - Output: A new folder "sorted" and multiple csv files under the folder. Each csv file contains about 5000 (determined by the input "batch size") users' observations over the time period (say 2 months). 
 
 How to run it:  
 `python step3_gatherTracesOfEachUser_RemoveDuplicate.py "E:/data" 5000`  
-Here, the string `"E:/data"` gives the folder directory of the unzipped data. `5000` gives the batch size, meaning how many users we want to read in to memory for sorting. 
+Here, the string `"E:/data"` gives the folder directory of the unzipped data. `5000` gives the batch size, meaning we want to read in 5000 users to memory for sorting in one round of computation. 
 
-Sorted data are cut into multiple small files, each of which contains 5000 users (this number is the batch size as your input). IDs are shuffled before being split into small files. That is, each file contains a random sample of users. Each file is in CSV format; each row gives an observation, seperated by TAB. Table 3 gives a sample:
+Sorted data are cut into multiple small files, each of which contains 5000 users (this number is the batch size as your input). IDs are shuffled before being split into small files. That is, each file contains a random sample of users. Each file is in CSV format; each row gives an observation, separated by TAB. Table 3 gives a sample:
 
 **Table 3. A sample of sorted data.**
 
@@ -182,45 +182,45 @@ Sorted data are cut into multiple small files, each of which contains 5000 users
 |1491616021 | 80308…873dc16c3 | 0 | 35.10808 | -92.4338 | 110 | 170407204701|
 |1491616466 | c248c…7321bde86 | 1 | 40.25225 | -74.7267 | 30 | 170407215426|
 
-As shown in Table 3, an additional column/field is attached to give the human time of each record. It is named as “human_time”, which is a translation of the Unix timestamp of each record to local time. For example, the record with unix timestamp 1491673511 is given human_time 170408134511, meaning 2017/04/08 13:45:11. The translation uses python package `time` and considers the time zone offset: `time.strftime("%y%m%d%H%M%S", time.gmtime(Timestamp + timezone_offset))`. This additional field is for the convenience of further computations. 
+As shown in Table 3, an additional column/field "Human_time" is attached to give the human time of each record. It is a translation of the Unix timestamp of each record to local time. For example, the record with unix timestamp 1491673511 is given human_time 170408134511, meaning 2017/04/08 13:45:11. The translation uses python package `time` and considers the time zone offset: `time.strftime("%y%m%d%H%M%S", time.gmtime(Timestamp + timezone_offset))`. This additional field is for the convenience of further computations. 
 The field time_zone_offset from the raw data is removed to save storage space. It is useless once we have “human_time”, which is already in the local time zone. 
 
 At the end of the three steps, your work directory should look like the one in the following. Notice that a new folder "sorted" is created; each csv file in the folder contains the observations of a part of users (e.g., 5000 in the example).  
 
 > **Code block 3.** The data directory after the three preprocessing steps.
 ```bash
-├── data
-│   ├── raw
-│   │   ├── 2019110100
-│   │   │   ├── part-00000-96e7044e-3c10-4b04-94d9-be8eaa57f2b1-c000.csv.gz
-│   │   │   ├── part-00001-96e7044e-3c10-4b04-94d9-be8eaa57f2b1-c000.csv.gz
-│   │   │   └── ...
-│   │   ├── 2019110200
-│   │   │   ├── part-00000-b821e85f-6642-4ef2-b0da-64631ddec6a4-c000.csv.gz
-│   │   │   ├── part-00001-b821e85f-6642-4ef2-b0da-64631ddec6a4-c000.csv.gz
-│   │   │   └── ...
-│   │   └── ...
-│   ├── unzipped
-│   │   ├── 20191101.csv
-│   │   ├── 20191101.csv
-│   │   └── ...
-│   ├── sorted
-│   │   ├── sorted_00.csv
-│   │   ├── sorted_01.csv
-│   │   └── ...
-└── usernamelist.csv
++-- data
+¦   +-- raw
+¦   ¦   +-- 2019110100
+¦   ¦   ¦   +-- part-00000-96e7044e-3c10-4b04-94d9-be8eaa57f2b1-c000.csv.gz
+¦   ¦   ¦   +-- part-00001-96e7044e-3c10-4b04-94d9-be8eaa57f2b1-c000.csv.gz
+¦   ¦   ¦   +-- ...
+¦   ¦   +-- 2019110200
+¦   ¦   ¦   +-- part-00000-b821e85f-6642-4ef2-b0da-64631ddec6a4-c000.csv.gz
+¦   ¦   ¦   +-- part-00001-b821e85f-6642-4ef2-b0da-64631ddec6a4-c000.csv.gz
+¦   ¦   ¦   +-- ...
+¦   ¦   +-- ...
+¦   +-- unzipped
+¦   ¦   +-- 20191101.csv
+¦   ¦   +-- 20191101.csv
+¦   ¦   +-- ...
+¦   +-- sorted
+¦   ¦   +-- sorted_00.csv
+¦   ¦   +-- sorted_01.csv
+¦   ¦   +-- ...
++-- usernamelist.csv
 ```
 
 
 ## Codes in Processing Folder
-The folder provides codes for processing the data (i.e., extracting stays from app data). It contains 10 py files. Among them, users only need to operate on the `main.py`, as the other 9 files are called by `main.py`. 
+The folder provides codes for processing the data (i.e., extracting stays from app data). It contains 10 py files. Among them, you only need to work with `main.py`, as it calls the other 9 files in this folder.   
 
 ### [main.py](https://github.com/feilongwang92/app-data/blob/master/processing/main.py "main.py")
 
-Extract trips from app-based data following the “Divide, Conquer and Integrate” (DCI) framework proposed by ([Wang et al. 2019](http://www.sciencedirect.com/science/article/pii/S0968090X18316085 "Wang et al. 2019").  This is the only file you will work with, as other python files in the folder are called into `main.py`. 
-- Input: the input should include the data file to be process and several parameters that are related to the definations of cellular and gps stays, as listed in Table 5.  Also see an example below for better understanding. 
+Extract trips from app-based data following the “Divide, Conquer and Integrate” (DCI) framework proposed by ([Wang et al. 2019](http://www.sciencedirect.com/science/article/pii/S0968090X18316085 "Wang et al. 2019")).   
+- Input: the input should include the data file to be processed and several parameters that are related to the definitions of cellular and gps stays, as listed in Table 5.  Also see an example below for better understanding. 
 
-**Table 4.** A list of input to `main.py`
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; **Table 4.** A list of input to `main.py`
 
 | <div style="width:100px">Input</div> | Description                           |
 | :------------ | :------------ |
@@ -239,10 +239,10 @@ How to run it:
 `python main.py "E:/data" "sorted_00.csv" "processed_00.csv" 1000 100 300 0.2 1.0`  
 
 The arguments here are:  
-`"E:/data"` gives the work directory, where the input data folder "sorted" and processed data folder are ("processed" folder will be created by the programme).  
-`"sorted_00.csv"` gives an input data file (one of the file resulting from the preprocessing) for processing. The programme will find it under folder "sorted" by searching the input work directory.  
-`"processed_00.csv"` specifies the file where to write after the data of each user is processed. The file will be under folder "processed". The folder will be created by the programme if it does not exist.  
-`1000` sets batch size as 1000, meaning that we allow the programme reads 1000 users into memory for one round of processing. Set the number depending on your PC memory size: if your computer has a large memory, set it a large number. You may need some trials and errors. With a 32GB computer, I set it as 5000 users, each of which has two-month observations.   
+`"E:/data"` gives the work directory, where the input data folder "sorted" and processed data folder are ("processed" folder will be created by the program).  
+`"sorted_00.csv"` gives an input data file (one of the file resulting from the preprocessing) for processing. The program will find it under folder "sorted" by searching the input work directory.  
+`"processed_00.csv"` specifies the file where to write after the data of each user is processed. The file will be under folder "processed". The folder will be created by the program if it does not exist.  
+`1000` sets batch size as 1000, meaning that we allow the program to read 1000 users into memory for one round of processing. Set the number depending on your PC memory size: if your computer has a large memory, set it a large number. You may need some trials and errors. With a 32GB computer, I set it as 5000 users, each of which has two-month observations.   
 `100` uses 100 meters as the threshold for partitioning records into gps and cellular traces.  
 `300` uses 300 seconds as the temporal constraint to define a stay.  
 `0.2` uses 0.2 Km as the spatial constraint to define a gps stay.  
@@ -252,30 +252,30 @@ After this step, your data directory looks like the one below. Notice that a new
 
 > **Code block 4.** The data directory after the three preprocessing steps.
 ```bash
-├── data
-│   ├── raw
-│   │   ├── 2019110100
-│   │   │   ├── part-00000-96e7044e-3c10-4b04-94d9-be8eaa57f2b1-c000.csv.gz
-│   │   │   ├── part-00001-96e7044e-3c10-4b04-94d9-be8eaa57f2b1-c000.csv.gz
-│   │   │   └── ...
-│   │   ├── 2019110200
-│   │   │   ├── part-00000-b821e85f-6642-4ef2-b0da-64631ddec6a4-c000.csv.gz
-│   │   │   ├── part-00001-b821e85f-6642-4ef2-b0da-64631ddec6a4-c000.csv.gz
-│   │   │   └── ...
-│   │   └── ...
-│   ├── unzipped
-│   │   ├── 20191101.csv
-│   │   ├── 20191101.csv
-│   │   └── ...
-│   ├── sorted
-│   │   ├── sorted_00.csv
-│   │   ├── sorted_01.csv
-│   │   └── ...
-│   ├── processed
-│   │   ├── processed_00.csv
-│   │   ├── processed_01.csv
-│   │   └── ...
-└── usernamelist.csv
++-- data
+¦   +-- raw
+¦   ¦   +-- 2019110100
+¦   ¦   ¦   +-- part-00000-96e7044e-3c10-4b04-94d9-be8eaa57f2b1-c000.csv.gz
+¦   ¦   ¦   +-- part-00001-96e7044e-3c10-4b04-94d9-be8eaa57f2b1-c000.csv.gz
+¦   ¦   ¦   +-- ...
+¦   ¦   +-- 2019110200
+¦   ¦   ¦   +-- part-00000-b821e85f-6642-4ef2-b0da-64631ddec6a4-c000.csv.gz
+¦   ¦   ¦   +-- part-00001-b821e85f-6642-4ef2-b0da-64631ddec6a4-c000.csv.gz
+¦   ¦   ¦   +-- ...
+¦   ¦   +-- ...
+¦   +-- unzipped
+¦   ¦   +-- 20191101.csv
+¦   ¦   +-- 20191101.csv
+¦   ¦   +-- ...
+¦   +-- sorted
+¦   ¦   +-- sorted_00.csv
+¦   ¦   +-- sorted_01.csv
+¦   ¦   +-- ...
+¦   +-- processed
+¦   ¦   +-- processed_00.csv
+¦   ¦   +-- processed_01.csv
+¦   ¦   +-- ...
++-- usernamelist.csv
 ```
 
 The number of records after processing will be different as well as the variables contained in the input file and the output file. Each processed record in an output csv file could represent one of the two: 1) either a transient point, which is the same as a record in the original raw input file (with stay_dur = -1); 2) or a stay (with positive stay_dur). Each record has 12 fields, including several fields that are copies of the original data and additional fields providing stay information (if the record is a stay) such as latitude, longitude, duration, uncertainty radius.
@@ -315,12 +315,13 @@ Table 5 shows a sample of (synthetic) processed data in a csv file. Each record 
 | --------------------------------------- | ------------------------------------- |
 |Unix_start_t | The first timestamp when this stay is observed; if this record is a passingby record, it gives the timestamp of this passingby record.  |
 |ID | User ID |
-|ID_type | OS type of devices in original data; now modified as “addedphonestay” if it is stay acquired after combing cellular and gps data |
+|ID_type | OS type of devices in original data; if the record is cellular stay, it is modified as “addedphonestay” (this gives you a chance to count how many stays are cellular stays later) |
 |Orig_lat / Orig_long / Orig_unc | Latitude / Longitude / Location uncertainty (in meters), in original data |
 |Stay_lat / Stay_long / Stay_unc / Stay_dur |  Latitude / Longitude / uncertainty(meters) / duration(seconds) of identified stay; if not a stay but a passing point, marked as “-1”|
 |Stay_label | A label is given to each stay. The label is unique for a stay location belonging to one user in the entire study period. There is no order when labeling the locations (just label a location with 0 when it is first seen).|
 |Human_start_t | Translation of unix_start_t; for reading and later calculation convenience; 200507133025 means 2020/05/07 13:30:25 PM.|
 
+    
 The remaining python files are called by main.py. So you do not need to work on them. In the following, we introduce functions coded in these files for your interest. You may skip this part. 
 
 #### [gps_traces_clustering.py](https://github.com/feilongwang92/app-data/blob/master/processing/gps_traces_clustering.py "gps_traces_clustering.py")
@@ -338,7 +339,7 @@ The file specifies the function combineGPSandPhoneStops called by `main.py`. The
 - Input of the function: processed gps records (output of function clusterGPS ) and processed cellular data (output of function clusterPhone) of one user ID. 
 - Output of the function: processed records of the input user ID. As the same as the input data, the output data is structured in a python dictionary. A key gives a date and its value gives a list of integrated, processed records on the date. The 12 columns of the output have the same meaning as these in Table 6. Each record in the output file could represent one of the two: 1) either a transient point which is the same as a record in the original raw input file (with stay_dur = -1); 2) or a stay (with positive stay_dur). Here, a stay could come from a cellular stay or a gps stay. 
 
-The following python functions are called into the previous three files, i.e.  `gps_traces_clustering.py`, `cellular_traces_clustering.py`, and  `combine_stays_phone_gps.py`.
+The following python functions are called into the previous three files, i.e., `gps_traces_clustering.py`, `cellular_traces_clustering.py`, and  `combine_stays_phone_gps.py`.
 
 #### [incremental_clustering.py](https://github.com/feilongwang92/app-data/blob/master/processing/incremental_clustering.py "incremental_clustering.py")
 
@@ -369,7 +370,7 @@ The file specifies the function `oscillation_h1_oscill` called by `cellular_trac
 
 The file specifies the function `distance`. The function is to compute the distance between two locations and is commonly used in almost every py files. 
 - Input of the function: a list of two locations in longitude and latitude.
-- Output of the function: a float-type number giving the Euclidean distance between the input two locations in kilometers. 
+- Output of the function: a float-type number that represents the Euclidean distance (in kilometers) between the input two locations. 
 - A note following a previous discussion: The function computes "geodesic distance". The function should not be replaced by a simple Euclidean distance function, as latitude and longitude are not equivalent. Specifically, in the Seattle area, the geodesic distance will increase by about 100 meters if the latitude increases by 0.001, but the geodesic distance will increase by only about 20 meters if the longitude increases by 0.001. And this difference between latitude and longitude should be unique in different areas of the Earth. 
 
 #### [util_func.py](https://github.com/feilongwang92/app-data/blob/master/processing/util_func.py "util_func.py")
@@ -382,12 +383,14 @@ A test dataset is included in this folder and is organized in folder “test_dat
 For testing purposes, both the input (example raw data) and output data (processed data) are included. The output data can be compared with your output to identify potential issues in your implementation. 
 The test data is in file “anExample”. It contains one user ID and two manually created trajectories on two days, one having 3 trips and the other one having 2 trips. You could find some visualizations of this example data in another document named “workflow of data processing.doc”.
 
+
 ## Codes in Postprocessing Folder
-This folder serves as an example of how to read in the processed data for postprocessing computations, such as inferring home and work locations. 
+This folder serves examples of how to read in the processed data for postprocessing computations, such as inferring home and work locations. 
 
 ### [home_work.py](https://github.com/feilongwang92/app-data/blob/master/postprocessing/home_work.py "home_work.py")
 
 - Input: 1) one of the csv files obtained from the processing folder "processed". Recall that such a csv file contains processed observations of 5000 users; 2) batch size: how many users to read into memory in one round of computation.
+
 - Output: There will be two csv files generated under your work directory. One is "home_inferred.csv" containing home locations and the other is "workplace_inferred.csv" containing work locations. Each row of the home/work file gives the ID and the home/work location of one user, in the form of longitude and latitude.  
 
 How to run it:    
@@ -395,23 +398,24 @@ How to run it:
 Here, `"E:/data/processed/processed_00.csv"` gives a file containing a part of processed data. The file is under directory `"E:/data/processed/"`. To compute all files under directory `"E:/data/processed/"`, you can write a loop for this command.    
 `1000` gives the batch size, meaning that we want to read 1000 users into memory for each round of computation to avoid memory overflow (you can set a different number depending on the memory size).    
 
+    
 ## Notes of running and understanding the codes
 
 **Notes of preprocessing raw data**
 
-- some unexpected records: some raw records may have '\N' value in their “accuracy” field; 
+- There may be some unexpected records in the raw data: a few raw records have '\N' value in their “accuracy” field; 
 
-- duplicated records can be in two forms: 1) two records are the same in terms of all fields; 2) two records have the same timestamp and latitude and longitude coordinates, but they have different location accuracy; 
+- Duplicated records can be one of two cases: 1) two records are the same for all fields; 2) two records have the same timestamp, latitude and longitude coordinates, but have different location accuracy. 
 
-- A note of loading data to database, if you use a database instead of operating on csv files directly: accuracy of some records could be as large as 562119 meters (should be outliers; be careful when loading data into a database, as in a database, an integer 562119 is loaded as 32768 using a SmallInt datatype); 
+- A note of loading data to database, if you use a database instead of operating on csv files directly: accuracy of some records could be as large as 562119 meters (should be outliers; be careful when loading data into a database, as in a database, an integer 562119 is loaded as 32768 using a SmallInt datatype). 
 
-- longitude/latitude in some raw records have no decimal place (e.g., 45	-125); be careful when you deal with decimal places. 
+- Longitude/latitude in a few raw records have no decimal place (e.g., 45	-125); be careful when you deal with decimal places. These records are removed in the preprocessing steps, as they literally do not give a mobile device's location.
 
 - Some records have a time zone that is different from your study area. For example, the Puget Sound region data have records that are not at Pacific Standard Time. Specifically, for these records, values at time-zone field (the last column) can be -36000, which stands for Alaska time (2 hours later than PST). (Such unexpected records are loaded as -32768 in a database if SmallInt is used.)
 
 **Tips for Addressing "out of memory" issue:**
 
-- If your machine gets a small memory, you can process observations belongs to a small batch of IDs: Read 5000 unique IDs (or 2000 IDs), get observations of these IDs from disk to memory, conduct computations, save results on disk, release memory and read next 5000 IDs. You may find that sorted and processed data have already been cut into files, each of which contains 5000 IDs. So you can read in and process these data files one by one.
+- If your machine gets a small memory, you can process observations belongs to a small batch of IDs: Read 5000 unique IDs (or 1000 IDs), get observations of these IDs from disk to memory, conduct computations, save results on disk, release memory and read next 5000 IDs. You may find that "sorted" and "processed" data have been cut into files, each of which contains 5000 IDs. This allows you to read in and process data files one by one and avoids memory overflow. 
 
 - Does using a database improve processing speed compared with working on csv files directly? Based on my experiments, using a database may not be a good idea in our cases. Time-saving from using a database is limited as it takes much time for just loading all files into a database table and indexing the table, although it is relatively fast to fetch observations belonging to one ID after the data is loaded. The use of databases has its advantages when we need some frequent data manipulations, for example, when we need to frequently identify and mute one specific ID. For sorting and processing all observations, the use of the database has no clear advantage as the data are processed in batches. 
 
@@ -423,6 +427,8 @@ Here, `"E:/data/processed/processed_00.csv"` gives a file containing a part of p
 
 - Codes of some functions seem necessarily complicated. They are coded to save calculation time. For example, originally, it takes a few lines in function diameterExceedCnstr, which is to find out whether the diameter of a cluster (defined as the longest distance between any two locations in the cluster) exceeds 200 meters. For saving computation time, the function is rewritten by applying some additional heuristic rules (see comments in function diameter). 
 
-- Codes are written in **python 2.7**; do remember that python codes are sensitive to package versions. The codes are tested in an environment of **anaconda2-4.2.0**. So the easiest way of duplicating the computation environment is to install [anaconda2-4.2.0](https://repo.anaconda.com/archive/ "anaconda2-4.2.0"). Note, it is not the latest anaconda version. It is found that the outputs could be different if an environment other than anaconda2-4 is used; it is not clear which package dependency raises this issue.
-
 - For more understandings of the algorithms underlying these codes: Refer to a report [Promises of transportation big data, 2019](https://www.fhwa.dot.gov/planning/tmip/publications/other_reports/data_emerging_tech/index.cfm "Promises of transportation big data, 2019") that is a deliverable of the FHWA project in 2018. Refer to the paper by [Wang et al., extracting trip ends from multi-sourced data, 2019.](http://www.sciencedirect.com/science/article/pii/S0968090X18316085 "Wang et al., extracting trip ends from multi-sourced data, 2019.") 
+
+**Deploy computation environment**
+
+- Codes are written in **python 2.7**; do remember that python codes are sensitive to package versions. The codes are tested in an environment of **anaconda2-4.2.0**. So the easiest way of duplicating the computation environment is to install [anaconda2-4.2.0](https://repo.anaconda.com/archive/ "anaconda2-4.2.0"). Note, it is not the latest anaconda version. It is found that the outputs could be different if an environment other than anaconda2-4 is used; it is not clear which package dependency raises this issue.
